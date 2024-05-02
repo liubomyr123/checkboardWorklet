@@ -44,7 +44,7 @@ registerPaint(
          * 
          */
         static get inputProperties() {
-            return ["--signspaces-items", "--signspaces-highlight-color"];
+            return ["--signspaces-items", "--highlight-color"];
         }
 
         /**
@@ -70,7 +70,7 @@ registerPaint(
          * @param {Array} args - Additional arguments passed to the paint function.
          */
         paint(ctx, size, styleMap, args) {
-            const highlightColor = styleMap.get("--signspaces-highlight-color").toString().trim() || "red";
+            const highlightColor = styleMap.get("--highlight-color").toString().trim() || "red";
             const signspacesItems = styleMap.get("--signspaces-items");
 
             let items;
