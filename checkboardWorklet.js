@@ -58,7 +58,7 @@ registerPaint(
          * // Returns: ["patternType", "patternSize"]
          */
         static get inputArguments() {
-            return ['fillC'];
+            return ["patternType", "patternSize"]; // Not working. In theory we can access to this values as 4th param of pant(_, _, _, args). So, args[0] === patternType, args[1] === patternSize
         }
 
         

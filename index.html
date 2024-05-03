@@ -15,8 +15,18 @@
         <button onclick="stop()">Stop detecting</button>
         <input type="color" onchange="color_change()" value="#ffff00" />
         <input type="range" onchange="saturation_change()" value="10" min="0" max="10" step="1" />
+        Add new word:
+        <input type="text" id="add_word_text_input" autocomplete="off" list="new_words_datalist" />
+        <datalist id="new_words_datalist">
+        </datalist>
+        Remove word:
+        <input type="text" id="remove_word_text_input" autocomplete="off" list="active_words_datalist" />
+        <datalist id="active_words_datalist">
+        </datalist>
+        Active words:
+        <div id="list_of_words"></div>
     </div>
-    <div style="margin-left: 10px; margin-right: 250px;">
+    <div style="margin-left: 10px; margin-right: 250px;" id="main_content">
 
         <h3>
             "A DREAM"
@@ -136,10 +146,11 @@
 
 <script>
     const is_paint_worklet_available = "paintWorklet" in CSS;
-    const not_available_message = '`paintWorklet` is not avaliable in your browser';
-    const words_to_search = ['what', 'man', 'thoughts', 'luck', 'come', 'is', 'heart', 'then', 'not', 'river', 'lot'];
-    const words_to_avoid = ['lot'];
+    const not_available_message = '`paintWorklet` is not available in your browser';
+    let words_to_search = ['what', 'man', 'thoughts', 'luck', 'come', 'is', 'heart', 'then', 'not', 'river', 'lot'];
+    const words_to_avoid = [''];
     const default_color = '#ffff00';
+    let unique_words = [];
 
     async function wait(time) {
         return new Promise((resolve) => {
@@ -425,9 +436,94 @@
             block.style.setProperty("--signspaces-items", JSON.stringify(block_items));
             block.style.background = `paint(signspaces-paint)`;
         }
-    }
+    };
 
     const highlighter = new Highlighter();
+
+    document.querySelector('#add_word_text_input').addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            add_new_word();
+        }
+    });
+
+    document.querySelector('#remove_word_text_input').addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            remove_new_word();
+        }
+    });
+
+    const get_all_words_from_main_content = () => {
+        const main_content = document.querySelector('#main_content');
+        if (main_content) {
+            const innerText = document.querySelector('#main_content').innerText;
+            unique_words = [...new Set(innerText.split('\n').map((word) => word.split(' ')).flat().map((word) => word.replace(/[^a-zA-Z]/g, '').toLowerCase()))];
+        }
+    }
+
+    const update_active_words_datalist = () => {
+        const active_words_datalist = document.querySelector('#active_words_datalist');
+        active_words_datalist.innerHTML = '';
+        for (const word of words_to_search) {
+            active_words_datalist.innerHTML += `
+                <option value="${word}"></option>
+            `;
+        }
+    }
+
+    const update_new_words_datalist = () => {
+        const new_words_datalist = document.querySelector('#new_words_datalist');
+        new_words_datalist.innerHTML = '';
+        for (const word of unique_words) {
+            new_words_datalist.innerHTML += `
+                <option value="${word}"></option>
+            `;
+        }
+    }
+
+    const update_list_of_words = () => {
+        const list_of_words = document.querySelector('#list_of_words');
+        list_of_words.innerHTML = '';
+        for (const word of words_to_search) {
+            list_of_words.innerHTML += `
+                <li>${word}</li>
+            `;
+        }
+        update_active_words_datalist();
+        update_new_words_datalist();
+    }
+    const add_new_word = () => {
+        if (!is_paint_worklet_available) {
+            console.log(not_available_message);
+            return
+        }
+        const new_word = document.querySelector('#add_word_text_input');
+        if (!new_word) return;
+
+        if (words_to_search.find((word) => word === new_word.value)) {
+            new_word.value = '';
+            return
+        };
+
+        words_to_search.push(new_word.value.toLowerCase());
+        highlighter.restart_detecting(words_to_search, words_to_avoid);
+        update_list_of_words();
+        new_word.value = '';
+    }
+    const remove_new_word = () => {
+        if (!is_paint_worklet_available) {
+            console.log(not_available_message);
+            return
+        }
+        const word_to_remove = document.querySelector('#remove_word_text_input');
+        if (!word_to_remove) return;
+
+        if (words_to_search.find((word) => word === word_to_remove.value)) {
+            words_to_search = words_to_search.filter((word) => word !== word_to_remove.value);
+            highlighter.restart_detecting(words_to_search, words_to_avoid);
+            update_list_of_words();
+        };
+        word_to_remove.value = '';
+    }
     const start = () => {
         if (!is_paint_worklet_available) {
             console.log(not_available_message);
@@ -468,6 +564,8 @@
                 await highlighter.init();
                 highlighter.restart_detecting(words_to_search, words_to_avoid);
                 highlighter.set_highlight_color(default_color);
+                get_all_words_from_main_content();
+                update_list_of_words();
 
                 await CSS.paintWorklet.addModule("checkboardWorklet.js")
                 console.log('paintWorklet:OK');
