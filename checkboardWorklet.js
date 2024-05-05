@@ -90,7 +90,7 @@ registerPaint(
             // if (!items) return;
             if (!highlightColor) return;
             if (!Object.keys(colors_word).length) return
-            console.log('colors_word', colors_word);
+            // console.log('colors_word', colors_word);
 
             Object.entries(colors_word).map(([color, list_of_coordinates_outer]) => {
                 for (const list_of_coordinates_inner of list_of_coordinates_outer) {
