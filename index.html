@@ -309,27 +309,37 @@
         style_main = document.createElement("style");
         /** @type {Map<HTMLElement, string>} */
         blocks_to_last_repaint_id = new Map();
+        /** @type {Map<string, string>} */
+        word_color_map = new Map();
 
-        async init() {
+        async init(all_words, exclude_words) {
             // init_styles
             this.set_highlight_color(default_color);
             document.head.append(this.style_main);
+
+            this.detecting = true;
+            this.strings = all_words.reduce((acc, word) => (!exclude_words.includes(word)) ? [...acc, word] : acc, []);
+
+            this.update_text_nodes();
+            this.get_colors_for_words();
+            this.update_matches();
+
             // this.set_colors_for_words(words_to_search);
 
             // init_event_listeners
-            window.addEventListener("mousedown", (e) => this.handle_user_interaction(), true);
-            window.addEventListener("keydown", (e) => this.handle_user_interaction(), true);
-            window.addEventListener("wheel", (e) => this.handle_user_interaction(), true);
-            window.addEventListener("scroll", (e) => this.handle_user_interaction(), true);
-            window.addEventListener("resize", (e) => this.handle_user_interaction(), true);
+            // window.addEventListener("mousedown", (e) => this.handle_user_interaction(), true);
+            // window.addEventListener("keydown", (e) => this.handle_user_interaction(), true);
+            // window.addEventListener("wheel", (e) => this.handle_user_interaction(), true);
+            // window.addEventListener("scroll", (e) => this.handle_user_interaction(), true);
+            // window.addEventListener("resize", (e) => this.handle_user_interaction(), true);
         }
 
-        async handle_user_interaction() {
-            if (this.detecting) {
-                this.update_text_nodes();
-                this.update_matches();
-            }
-        }
+        // async handle_user_interaction() {
+        //     if (this.detecting) {
+        //         this.update_text_nodes();
+        //         this.update_matches();
+        //     }
+        // }
 
         /** @param {string} color */
         set_highlight_color(color) {
@@ -351,9 +361,9 @@
         //     block.style.setProperty("--words-color", JSON.stringify(words_color));
         // }
 
-        // get_highlight_color() {
-        //     return getComputedStyle(document.documentElement).getPropertyValue('--highlight-color');
-        // }
+        get_highlight_color() {
+            return getComputedStyle(document.documentElement).getPropertyValue('--highlight-color');
+        }
 
         // /** @param {HTMLElement} block */
         // get_words_from_block(block) {
@@ -411,6 +421,7 @@
             this.saturation = saturation;
             this.strings = all_words.reduce((acc, word) => (!exclude_words.includes(word)) ? [...acc, word] : acc, []);
             this.update_text_nodes();
+            // this.get_colors_for_words();
             this.update_matches();
         }
 
@@ -422,7 +433,6 @@
         reset() {
             this.un_paint_blocks();
             this.text_nodes = new Set();
-            this.matches = [];
             this.matches_by_blocks = new Map();
             this.number_of_matches_all = 0;
             this.number_of_matches_visible = 0;
@@ -474,6 +484,23 @@
             }
         }
 
+        get_colors_for_words() {
+            const highlight_color = this.get_highlight_color();
+            for (let node of this.text_nodes) {
+                let text = node.nodeValue;
+                if (!text) return;
+
+                const words_with_indexes = this.get_words_with_indexes(text, this.strings);
+                if (words_with_indexes.length < 0) return;
+
+                for (const word of words_with_indexes) {
+                    if (!this.word_color_map.has(word.text)) {
+                        this.word_color_map.set(word.text, highlight_color);
+                    }
+                }
+            }
+        }
+
         update_matches() {
             loop_1: for (let node of this.text_nodes) {
                 this.text_nodes.delete(node);
@@ -496,7 +523,6 @@
                     });
                     resize_observer.observe(first_block_parent);
                 }
-
                 loop_2: for (const word of words_with_indexes) {
                     this.number_of_matches_all += 1;
                     if ((this.number_of_matches_visible / this.number_of_matches_all) <= this.saturation / 10) {
@@ -517,11 +543,13 @@
                         start: word.index,
                         end: word.index + word.text.length,
                     });
+                    // if (!this.word_color_map.has(word.text)) {
+                    //     this.word_color_map.set(word.text, highlight_color)
+                    // }
                 }
                 if (first_block_parent) {
                     const set = this.matches_by_blocks.get(first_block_parent);
                     for (let match of matches) {
-                        this.matches.push(match);
                         set.push(match);
                     }
                     this.paint_block(first_block_parent);
@@ -595,7 +623,7 @@
                 }
             }
             Object.entries(block_map).map(([word, coordinates], index) => {
-                const color = word.length > 3 ? 'red' : 'yellowgreen';
+                const color = this.word_color_map.get(word); // word.length > 3 ? 'red' : 'yellowgreen';
                 if (block_color_map[color]) {
                     block_color_map[color].push(coordinates)
                 } else {
@@ -608,13 +636,17 @@
             }
         }
 
-        // /**
-        //  *  @param {string} word
-        //  *  @param {string} color
-        //  */
-        // set_color_for_word(word, color) {
-
-        // }
+        /**
+         *  @param {string} word
+         *  @param {string} color
+         */
+        set_color_for_word(word, color) {
+            if (this.word_color_map.has(word)) {
+                this.word_color_map.set(word, color);
+                this.update_text_nodes();
+                this.update_matches()
+            }
+        }
     };
 
     const highlighter = new Highlighter();
@@ -740,28 +772,27 @@
     (async () => {
         if (is_paint_worklet_available) {
             try {
-                await highlighter.init();
-                highlighter.restart_detecting(words_to_search, words_to_avoid);
-                highlighter.set_highlight_color(default_color);
+                await highlighter.init(words_to_search, words_to_avoid);
                 get_all_words_from_main_content();
                 update_list_of_words();
 
                 await CSS.paintWorklet.addModule("checkboardWorklet.js")
                 console.log('paintWorklet:OK');
+                highlighter.set_color_for_word('not', 'yellowgreen');
                 document.addEventListener(
                     "mousemove",
                     async ({ clientX, clientY }) => {
                         const [data_type, rect, string] = highlighter.get_data_from_point(clientX, clientY);
                         switch (data_type) {
                             case 'word': {
-                                console.log('word', {
-                                    word: string,
-                                    position: rect
-                                });
+                                // console.log('word', {
+                                //     word: string,
+                                //     position: rect
+                                // });
                                 break;
                             }
                             case 'nothing': {
-                                console.log('nothing');
+                                // console.log('nothing');
                                 break;
                             }
                             default:
