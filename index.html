@@ -13,7 +13,7 @@
         <div>Options:</div>
         <button onclick="start()">Start detecting</button>
         <button onclick="stop()">Stop detecting</button>
-        <input type="color" onchange="color_change()" value="#ffff00" />
+        <!-- <input type="color" onchange="color_change()" id="default_color" value="#ffff00" /> -->
         <input type="range" onchange="saturation_change()" value="10" min="0" max="10" step="1" />
         Add new word:
         <input type="text" id="add_word_text_input" autocomplete="off" list="new_words_datalist" />
@@ -645,6 +645,8 @@
                 this.word_color_map.set(word, color);
                 this.update_text_nodes();
                 this.update_matches()
+            } else {
+                this.word_color_map.set(word, color);
             }
         }
     };
@@ -696,7 +698,9 @@
         list_of_words.innerHTML = '';
         for (const word of words_to_search) {
             list_of_words.innerHTML += `
-                <li>${word}</li>
+                <li style="display: flex; justify-content: space-between">${word}
+                    <input type="color" onchange="color_change_word('${word}')" value="#ffff00" name="${word}" />
+                </li>
             `;
         }
         update_active_words_datalist();
@@ -718,6 +722,7 @@
         words_to_search.push(new_word.value.toLowerCase());
         highlighter.restart_detecting(words_to_search, words_to_avoid);
         update_list_of_words();
+        highlighter.set_color_for_word(new_word.value.toLowerCase(), highlighter.get_highlight_color());
         new_word.value = '';
     }
     const remove_new_word = () => {
@@ -749,15 +754,25 @@
         }
         highlighter.stop_detecting();
     }
-    const color_change = (value) => {
+    // const color_change = () => {
+    //     if (!is_paint_worklet_available) {
+    //         console.log(not_available_message);
+    //         return
+    //     }
+    //     const color_input = document.querySelector('#default_color');
+    //     if (!color_input) return;
+
+    //     highlighter.set_highlight_color(color_input.value);
+    // }
+    const color_change_word = (value) => {
         if (!is_paint_worklet_available) {
             console.log(not_available_message);
             return
         }
-        const color_input = document.querySelector('input[type="color"]');
+        const color_input = document.querySelector(`input[name="${value}"]`);
         if (!color_input) return;
 
-        highlighter.set_highlight_color(color_input.value);
+        highlighter.set_color_for_word(value, color_input.value);
     }
     const saturation_change = (value) => {
         if (!is_paint_worklet_available) {
@@ -778,7 +793,6 @@
 
                 await CSS.paintWorklet.addModule("checkboardWorklet.js")
                 console.log('paintWorklet:OK');
-                highlighter.set_color_for_word('not', 'yellowgreen');
                 document.addEventListener(
                     "mousemove",
                     async ({ clientX, clientY }) => {
