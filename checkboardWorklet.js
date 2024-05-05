@@ -44,7 +44,7 @@ registerPaint(
          * 
          */
         static get inputProperties() {
-            return ["--signspaces-items", "--highlight-color"];
+            return ["--signspaces-items", "--highlight-color", "--words-color"];
         }
 
         /**
@@ -61,7 +61,7 @@ registerPaint(
             return ["patternType", "patternSize"]; // Not working. In theory we can access to this values as 4th param of pant(_, _, _, args). So, args[0] === patternType, args[1] === patternSize
         }
 
-        
+
         /**
          * Paints the sign spaces on the canvas.
          * @param {CanvasRenderingContext2D} ctx - ctx is the 2D drawing context a subset of the HTML Canvas API
@@ -70,21 +70,49 @@ registerPaint(
          * @param {Array} args - Additional arguments passed to the paint function.
          */
         paint(ctx, size, styleMap, args) {
-            const highlightColor = styleMap.get("--highlight-color").toString().trim() || "red";
-            const signspacesItems = styleMap.get("--signspaces-items");
+            const highlightColor = styleMap.get("--highlight-color").toString().trim();
+            // const signspacesItems = styleMap.get("--signspaces-items");
+            const words_color = styleMap.get("--words-color");
 
+            /** @type {[number, number, number, number][] | undefined} */
             let items;
+            /** @type {[string, string][] | undefined} */
+            let colors_word;
             try {
-                items = JSON.parse(signspacesItems);
+                // items = JSON.parse(signspacesItems);
+            } catch (error) {
+            }
+            try {
+                colors_word = JSON.parse(words_color);
             } catch (error) {
             }
 
-            if (!items) return;
-            for (let item of items) {
-                let [item_x, item_y, item_width, item_height] = item;
-                ctx.fillStyle = highlightColor;
-                this.roundRect(ctx, item_x, item_y, item_width, item_height, 5);
-            }
+            // if (!items) return;
+            if (!highlightColor) return;
+            if (!Object.keys(colors_word).length) return
+            console.log('colors_word', colors_word);
+
+            Object.entries(colors_word).map(([color, list_of_coordinates_outer]) => {
+                for (const list_of_coordinates_inner of list_of_coordinates_outer) {
+                    for (const item of list_of_coordinates_inner) {
+                        let [item_x, item_y, item_width, item_height] = item;
+                        ctx.fillStyle = color;
+                        this.roundRect(ctx, item_x, item_y, item_width, item_height, 5);
+                    }
+                }
+            })
+
+            // for (let item of items) {
+            //     let [item_x, item_y, item_width, item_height, item_color] = item;
+            //     ctx.fillStyle = highlightColor;
+            //     this.roundRect(ctx, item_x, item_y, item_width, item_height, 5);
+            // }
+
+            // for (let item of items) {
+            //     let [item_x, item_y, item_width, item_height, item_color] = item;
+            //     ctx.fillStyle = highlightColor;
+            //     this.roundRect(ctx, item_x, item_y, item_width, item_height, 5);
+            // }
         }
 
         /**

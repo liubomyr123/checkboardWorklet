@@ -142,6 +142,128 @@
         <hr />
 
     </div>
+
+    <hr />
+    <hr />
+    <hr />
+    <hr />
+
+    <div style="margin-left: 10px; margin-right: 250px;" id="main_content1">
+
+        <h3>
+            "A DREAM"
+        </h3>
+        <h4>
+            Taras Shevchenko
+        </h4>
+
+        <hr />
+        Each man on earth has his own fate, <br />
+        Each one his highway wide: <br />
+        This one builds up, that one lays waste, <br />
+        And that casts greedy eyes <br />
+        O’er all the globe, to find somewhere <br />
+        A land not yet enslaved, <br />
+        Which he could conquer and then bear <br />
+        With him into the grave. <br />
+
+        <hr />
+        This fellow in his neighbour's home <br />
+        His host cleans out at cards, <br />
+        While that one in a corner hones <br />
+        A blade for brother's heart. <br />
+        Then there's the solid citizen, <br />
+        The worthy, pious kind, <br />
+        Who'll creep up like a cat and then <br />
+        Bide patiently his time <br />
+        Until hard luck hits your affairs, <br />
+        Then pounce! — Don't plead your cause: <br />
+        Your wife's appeals and children's tears <br />
+        Won't save you from his claws. <br />
+        And that one, generous and grand, <br />
+        The fervent patriot, <br />
+        So deeply loves his native land, <br />
+        So worries o'er its lot, <br />
+        As from his country's heart he sucks <br />
+        The blood as though it was water!... <br />
+        The brethren meanwhile sit and look, <br />
+        Their eyes agape like saucers! <br />
+        And bleat like lambs: "Perhaps it was <br />
+        Thus ordained from on high." <br />
+        That's how it's meant to be! Because <br />
+        There's no God in the sky! <br />
+        You pull your yoke until your breath <br />
+        Gives out and you are done, <br />
+        Yet pray for heaven after death? <br />
+        In vain! There's none! There's none! <br />
+        Your labour's lost. Come to! Come to! <br />
+        In this world every one — <br />
+        The princes, and the beggars, too, <br />
+        They all are Adam's sons. <br />
+        Both he... and he... What's this I prate? <br />
+        What is it all about? <br />
+        I banquet every single day, <br />
+        Carouse day in, day out, <br />
+        While you with envy burn and hate! <br />
+        Don't scold: 'Twill do no good - <br />
+        I'm deaf to you! I drink my own, <br />
+        Not other people's blood! <br />
+
+        <hr />
+
+        Such thoughts went flitting through my head <br />
+        As tipsy from a merry feast <br />
+        In dead of night, on reeling feet, <br />
+        I made my way to home and bed. <br />
+        No bawling child or nagging spouse <br />
+        Have I to spoil my rest — <br />
+        With perfect peace I'm blest <br />
+        Both in my mind and in my house. <br />
+        I climbed into my bed <br />
+        And soon slept like the dead. <br />
+        And when a man has had a few, <br />
+        Though cannon roar he still will snore, <br />
+        He'll sleep whate'er you do. <br />
+        <hr />
+
+        Oh, what a vision rare I saw <br />
+        In sleep that night: <br />
+        A staunch abstainer would get iight, <br />
+        A tightwad would a coin bestow, <br />
+        If they could only get a glance. <br />
+        But not a chance! <br />
+        I dreamed: high in the air's expanse <br />
+        It was as though an owl was flying <br />
+        Over meadows, over valleys, <br />
+        Over river banks and gulleys, <br />
+        Over steppes and over forests. <br />
+        And in the owl's wake I flew, too, <br />
+        And flying, bid the earth adieu: <br />
+        <hr />
+
+        "Goodbye, O world, O earth, farewell, <br />
+        Unfriendly land, goodbye! <br />
+        My searing pain, my tortures cruel <br />
+        Above the clouds I'll hide. <br />
+        And as for you, my dear Ukraine, <br />
+        I'll leave the clouds behind <br />
+        And fall with dew to talk with you, <br />
+        Poor widow-country mine. <br />
+        I'll come at midnight when the dew <br />
+        Falls heavy on the fields; <br />
+        And softly-sadly we will talk <br />
+        Of what the future yields. <br />
+        Until the rising of the sun <br />
+        We'll talk about your woes, <br />
+        Until your infant sons are grown <br />
+        And rise against the foes. <br />
+        Goodbye, my lovely, poor Ukraine, <br />
+        0 widow-land of mine! <br />
+        Your children teach the living truth - <br />
+        That justice is divine!" <br />
+        <hr />
+
+    </div>
 </body>
 
 <script>
@@ -174,8 +296,6 @@
         detecting = false;
         /** @type {Set<Text>} */
         text_nodes = new Set();
-        /** @type {Set<Text>} */
-        text_nodes_new = new Set();
         /** @type {MatchObject[]} */
         matches = [];
         /** @type {Map<HTMLElement, MatchObject[]>} */
@@ -194,6 +314,7 @@
             // init_styles
             this.set_highlight_color(default_color);
             document.head.append(this.style_main);
+            // this.set_colors_for_words(words_to_search);
 
             // init_event_listeners
             window.addEventListener("mousedown", (e) => this.handle_user_interaction(), true);
@@ -215,6 +336,39 @@
             this.style_main.innerHTML = `html { --highlight-color: ${color}; }`;
         }
 
+        // /** @param {string[]} words_to_search */
+        // set_colors_for_words(words_to_search) {
+        //     console.log('words_to_search', words_to_search);
+        //     const highlight_color = this.get_highlight_color();
+        //     const words_color = words_to_search.map((word) => ([word, highlight_color]));
+        //     this.style_main.style.setProperty("--words-color", JSON.stringify(words_color));
+        // }
+
+        // /** @param {string[]} words_to_search @param {HTMLElement} block */
+        // set_1_colors_for_words(words_to_search, block) {
+        //     const highlight_color = this.get_highlight_color();
+        //     const words_color = words_to_search.map((word) => ([word, 'red']));
+        //     block.style.setProperty("--words-color", JSON.stringify(words_color));
+        // }
+
+        // get_highlight_color() {
+        //     return getComputedStyle(document.documentElement).getPropertyValue('--highlight-color');
+        // }
+
+        // /** @param {HTMLElement} block */
+        // get_words_from_block(block) {
+        //     const matches = this.matches_by_blocks.get(block);
+        //     const words = [];
+        //     if (matches) {
+        //         for (const match of matches) {
+        //             if (!words.includes(match.string)) {
+        //                 words.push(match.string)
+        //             }
+        //         }
+        //     }
+        //     return words;
+        // }
+
         /**
          * @param {MouseEvent['clientX']} client_x - The x-coordinate of the client point.
          * @param {MouseEvent['clientY']} client_y - The y-coordinate of the client point.
@@ -222,9 +376,11 @@
          */
         get_data_from_point(client_x, client_y) {
             const elements = document.elementsFromPoint(client_x, client_y);
+            if (!elements.length) return ['nothing'];
+
             for (const element of elements) {
-                if (this.matches_by_blocks.has(element)) {
-                    const matches = this.matches_by_blocks.get(element);
+                const matches = this.matches_by_blocks.get(element);
+                if (matches) {
                     for (const match of matches) {
                         const rects = match.range.getClientRects();
                         for (const rect of rects) {
@@ -240,7 +396,7 @@
                     }
                 }
             }
-            return ["nothing"];
+            return ['nothing']
         }
 
         /**
@@ -264,9 +420,8 @@
         }
 
         reset() {
-            this.unpaint_blocks();
+            this.un_paint_blocks();
             this.text_nodes = new Set();
-            this.text_nodes_new = new Set();
             this.matches = [];
             this.matches_by_blocks = new Map();
             this.number_of_matches_all = 0;
@@ -278,9 +433,8 @@
             let text_node;
             const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
             while ((text_node = walk.nextNode())) {
-                if (this.text_nodes.has(text_node) === false) {
+                if (!this.text_nodes.has(text_node)) {
                     this.text_nodes.add(text_node);
-                    this.text_nodes_new.add(text_node);
                 }
             }
         }
@@ -290,14 +444,14 @@
          * @param {string[]} asl_words
          */
         get_words_with_indexes(str, asl_words) {
-            const matchs = str.match(/[a-zA-Z0-9\$\&\_\+\-\:\^\.\']+|[^a-zA-Z0-9\$\&\_\+\-\:\^\.\']+/g);
-            if (!matchs) return [];
+            const matches = str.match(/[a-zA-Z0-9\$\&\_\+\-\:\^\.\']+|[^a-zA-Z0-9\$\&\_\+\-\:\^\.\']+/g);
+            if (!matches) return [];
 
             const words = [];
             let index = 0;
-            for (let i = 0; i < matchs.length; i++) {
-                if (matchs[i]) {
-                    const option = matchs[i].toLowerCase()
+            for (let i = 0; i < matches.length; i++) {
+                if (matches[i]) {
+                    const option = matches[i].toLowerCase()
                     if (asl_words.includes(option)) {
                         words.push({ index, text: option });
                     }
@@ -313,7 +467,7 @@
                 const parentElement = node.parentElement;
                 node = node.parentElement; // TODO: do not mutate node, try to save it in a new variable
 
-                if (!parentElement) return false;
+                if (!parentElement) return null;
 
                 const display = window.getComputedStyle(parentElement).display;
                 if (display === "block") return parentElement;
@@ -321,8 +475,8 @@
         }
 
         update_matches() {
-            loop_1: for (let node of this.text_nodes_new) {
-                this.text_nodes_new.delete(node);
+            loop_1: for (let node of this.text_nodes) {
+                this.text_nodes.delete(node);
 
                 let text = node.nodeValue;
                 if (!text) return;
@@ -331,11 +485,11 @@
                 if (words_with_indexes.length < 0) return;
 
                 const first_block_parent = this.get_first_block_parent(node);
-                if (typeof first_block_parent === 'boolean') return;
+                if (!first_block_parent) return;
 
                 /** @type {MatchObject[]} */
                 const matches = [];
-                if (this.matches_by_blocks.has(first_block_parent) === false) {
+                if (!this.matches_by_blocks.has(first_block_parent)) {
                     this.matches_by_blocks.set(first_block_parent, []);
                     const resize_observer = new ResizeObserver(() => {
                         this.paint_block(first_block_parent);
@@ -375,11 +529,11 @@
             }
         }
 
-        unpaint_blocks() {
+        un_paint_blocks() {
             for (const block of this.matches_by_blocks.keys()) {
                 const block_style = window.getComputedStyle(block);
                 if (block_style.background === "rgba(0, 0, 0, 0) paint(signspaces-paint) repeat scroll 0% 0% / auto padding-box border-box") {
-                    block.style.setProperty("--signspaces-items", "");
+                    block.style.setProperty("--words-color", "");
                     block.style.setProperty("background", "");
                 }
             }
@@ -393,7 +547,7 @@
         async paint_block(block) {
             const this_id = this.get_id();
             this.blocks_to_last_repaint_id.set(block, this_id);
-            // await wait(500); // we can add delay before show highlightes
+            // await wait(500); // we can add delay before show highlights
 
             const matches = this.matches_by_blocks.get(block);
             if (!matches) return;
@@ -411,7 +565,9 @@
             }
 
             /** @type {[number, number, number, number][]} */
-            const block_items = [];
+            // const block_items = [];
+            const block_map = {};
+            const block_color_map = {};
 
             const block_rect = block.getBoundingClientRect();
             for (const match of matches) {
@@ -422,20 +578,43 @@
                         const item_y = match_rect.top - block_rect.top;
                         const item_width = match_rect.width;
                         const item_height = match_rect.height;
-                        block_items.push([
+                        const block_item = [
                             item_x,
                             item_y,
                             item_width,
-                            item_height
-                        ]);
+                            item_height,
+                        ];
+                        if (block_map[match.string]) {
+                            block_map[match.string].push(block_item)
+                        } else {
+                            block_map[match.string] = [block_item];
+                        }
                     }
                 } catch (e) {
                     console.log("error", e);
                 }
             }
-            block.style.setProperty("--signspaces-items", JSON.stringify(block_items));
-            block.style.background = `paint(signspaces-paint)`;
+            Object.entries(block_map).map(([word, coordinates], index) => {
+                const color = word.length > 3 ? 'red' : 'yellowgreen';
+                if (block_color_map[color]) {
+                    block_color_map[color].push(coordinates)
+                } else {
+                    block_color_map[color] = [coordinates];
+                }
+            })
+            if (Object.keys(block_color_map).length) {
+                block.style.setProperty("--words-color", JSON.stringify(block_color_map));
+                block.style.background = `paint(signspaces-paint)`;
+            }
         }
+
+        // /**
+        //  *  @param {string} word
+        //  *  @param {string} color
+        //  */
+        // set_color_for_word(word, color) {
+
+        // }
     };
 
     const highlighter = new Highlighter();
@@ -577,7 +756,7 @@
                             case 'word': {
                                 console.log('word', {
                                     word: string,
-                                    positon: rect
+                                    position: rect
                                 });
                                 break;
                             }
