@@ -264,6 +264,56 @@
         <hr />
 
     </div>
+    <div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <hr />
+    </div>
+
 </body>
 
 <script>
@@ -417,6 +467,8 @@
                             }
                         }
                     }
+                } else if (element.dataset.avoid) {
+                    return ["avoid"];
                 }
             }
             return ['nothing']
@@ -454,8 +506,46 @@
         update_text_nodes() {
             /** @type {Text|undefined} */
             let text_node;
-            const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+            const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: function (node) {
+                        // Check if the parent element of the text node has id 'avoid-element', if yes, skip it
+                        // console.log('node.parentElement',
+                        //     // node.parentElement,
+                        //     { avoid: node.parentElement.dataset.avoid }
+                        // );
+                        // let ancestor = node.parentNode;
+                        // while (ancestor !== null) {
+                        //     if (ancestor.dataset.avoid) {
+                        //         return NodeFilter.FILTER_SKIP; // Skip this text node
+                        //     }
+                        //     ancestor = ancestor.parentNode;
+                        // }
+                        return NodeFilter.FILTER_ACCEPT; // Accept this text node
+                        // if (node.parentElement && node.parentElement.dataset.avoid) {
+                        //     return NodeFilter.FILTER_SKIP; // Skip this text node
+                        // } else {
+                        //     return NodeFilter.FILTER_ACCEPT; // Accept this text node
+                        // }
+                    }
+                }
+            );
+            function isDescendantOfAvoidElement(node) {
+                while (node !== null) {
+                    if (node.nodeType === Node.ELEMENT_NODE && node.dataset.avoid) {
+                        return true;
+                    }
+                    node = node.parentNode;
+                }
+                return false;
+            }
+
             while ((text_node = walk.nextNode())) {
+                if (isDescendantOfAvoidElement(text_node)) {
+                    // If the node is within an element with dataset.avoid, skip it
+                    continue;
+                }
+                // console.log('text_node', text_node);
                 if (!this.text_nodes.has(text_node)) {
                     this.text_nodes.add(text_node);
                 }
@@ -793,54 +883,70 @@
                 </li>
             `;
         }
+
+        /**
+         *  @param {string} word
+         */
+        const get_filtered_flat_items = (word) => {
+            const all_coordinates = highlighter.get_all_coordinates_for_word(word);
+            // console.log('all_coordinates', all_coordinates);
+            const prepared_to_navigate = all_coordinates.map(({ coordinates, top }) => {
+                // console.log('coordinates, top', coordinates, top);
+                const new_items = coordinates.map(({ coordinates_map }) => {
+                    // console.log('coordinates_map', coordinates_map);
+                    return coordinates_map.map(([x, y]) => {
+                        return ({
+                            y, top
+                        })
+                    })
+                });
+
+                // console.log('new_items', new_items);
+                return new_items;
+            });
+
+            const flat_items = prepared_to_navigate.flat(2);
+
+            const filtered_flat_items = [];
+            const seen = new Set();
+
+            flat_items.forEach(item => {
+                const identifier = `${item.y}-${item.top}`;
+                if (!seen.has(identifier)) {
+                    filtered_flat_items.push(item);
+                    seen.add(identifier);
+                }
+            });
+
+            return filtered_flat_items;
+        }
+
         document.querySelectorAll("button").forEach((button) => {
+            const word = button.dataset?.word;
+
+            if (word) {
+                const filtered_flat_items = get_filtered_flat_items(word);
+                button.textContent = `(${0}/${filtered_flat_items.length})`;
+            }
+
             button.addEventListener("click", function (event) {
                 const word = event.target.dataset.word;
                 const show_old = event.target.dataset.show;
-                const show_new = +show_old + 1;
-                // console.log('show_old', show_old, ": ", show_new);
+                let show_new = +show_old + 1;
                 button.setAttribute('data-show', show_new);
+                const filtered_flat_items = get_filtered_flat_items(word);
 
-                const all_coordinates = highlighter.get_all_coordinates_for_word(word);
-                // console.log('all_coordinates', all_coordinates);
-                const prepared_to_navigate = all_coordinates.map(({ coordinates, top }) => {
-                    // console.log('coordinates, top', coordinates, top);
-                    const new_items = coordinates.map(({ coordinates_map }) => {
-                        // console.log('coordinates_map', coordinates_map);
-                        return coordinates_map.map(([x, y]) => {
-                            return ({
-                                y, top
-                            })
-                        })
-                    });
-
-                    // console.log('new_items', new_items);
-                    return new_items;
-                });
-
-                const flat_items = prepared_to_navigate.flat(2);
-
-                const filtered_flat_items = [];
-                const seen = new Set();
-
-                flat_items.forEach(item => {
-                    const identifier = `${item.y}-${item.top}`;
-                    if (!seen.has(identifier)) {
-                        filtered_flat_items.push(item);
-                        seen.add(identifier);
-                    }
-                });
+                let current_show = show_new;
                 let show_current_word_coordinates = filtered_flat_items[0];
                 if (filtered_flat_items.length > show_new) {
-                    show_current_word_coordinates = filtered_flat_items[show_new];
+                    show_current_word_coordinates = filtered_flat_items[show_new - 1];
                 } else {
                     button.setAttribute('data-show', "0");
+                    show_current_word_coordinates = filtered_flat_items[filtered_flat_items.length - 1];
                 }
+                button.textContent = `(${current_show}/${filtered_flat_items.length})`;
 
                 // console.log('prepared_to_navigate', filtered_flat_items, show_current_word_coordinates);
-                // window.scrollTo(0,
-                //     show_current_word_coordinates.y + show_current_word_coordinates.top
-                // );
                 window.scrollTo({
                     top: show_current_word_coordinates.y + show_current_word_coordinates.top,
                     behavior: 'smooth'
@@ -941,6 +1047,7 @@
                     "mousemove",
                     async ({ clientX, clientY }) => {
                         const [data_type, rect, string] = highlighter.get_data_from_point(clientX, clientY);
+                        // console.log('data_type', data_type);
                         switch (data_type) {
                             case 'word': {
                                 // console.log('word', {
