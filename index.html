@@ -8,7 +8,7 @@
 </head>
 
 <body style="position: relative;">
-    <div
+    <div data-avoid="true"
         style="position: fixed; right: 10px; background-color: greenyellow; padding: 10px; display: flex; gap: 10px; flex-direction: column;">
         <div>Options:</div>
         <button onclick="start()">Start detecting</button>
@@ -292,6 +292,16 @@
      * @property {number} end - The end index of the match.
      */
 
+    /**
+     * @typedef {Object.<string, [number, number, number, number][]>} ColorDataMap
+     * An object where each key is a color code and the value is an array of arrays of rectangles.
+     */
+
+    /**
+     * @typedef {Object.<string, { coordinates_map: [number, number, number, number][], word: string }>} ColorDataMapWithWord
+     * An object where each key is a color code and the value is an array of arrays of rectangles.
+     */
+
     class Highlighter {
         detecting = false;
         /** @type {Set<Text>} */
@@ -311,6 +321,9 @@
         blocks_to_last_repaint_id = new Map();
         /** @type {Map<string, string>} */
         word_color_map = new Map();
+
+        /** @type {Map<HTMLElement, { color_data: ColorDataMapWithWord, parent_top: number }>} */
+        all_blocks_color_map = new Map();
 
         async init(all_words, exclude_words) {
             // init_styles
@@ -567,35 +580,22 @@
             }
         }
 
-        get_id() {
-            return Date.now().toString(36) + Math.floor(Math.random() * 1_000_000_000_000).toString(36);
-        }
 
-        /** @param {HTMLElement} block */
-        async paint_block(block) {
-            const this_id = this.get_id();
-            this.blocks_to_last_repaint_id.set(block, this_id);
-            // await wait(500); // we can add delay before show highlights
-
-            const matches = this.matches_by_blocks.get(block);
-            if (!matches) return;
-
-            const last_id = this.blocks_to_last_repaint_id.get(block);
-            if (this_id !== last_id) return;
-
-            const block_style = window.getComputedStyle(block);
-            if (
-                block_style.background === "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box" ||
-                block_style.background === "rgba(0, 0, 0, 0) paint(signspaces-paint) repeat scroll 0% 0% / auto padding-box border-box"
-            ) {
-            } else {
-                return;
-            }
-
-            /** @type {[number, number, number, number][]} */
-            // const block_items = [];
+        /** 
+         * @param {HTMLElement} block
+         * @param {MatchObject[]} matches
+         */
+        get_block_color_map(block, matches) {
             const block_map = {};
+            /**
+             * @type {ColorDataMap}
+             */
             const block_color_map = {};
+
+            /**
+             * @type {ColorDataMapWithWord}
+             */
+            const block_color_map_with_word = {};
 
             const block_rect = block.getBoundingClientRect();
             for (const match of matches) {
@@ -629,7 +629,69 @@
                 } else {
                     block_color_map[color] = [coordinates];
                 }
+
+                if (block_color_map_with_word[color]) {
+                    block_color_map_with_word[color].push({
+                        coordinates_map: coordinates,
+                        word
+                    })
+                } else {
+                    block_color_map_with_word[color] = [{
+                        coordinates_map: coordinates,
+                        word
+                    }];
+                }
             })
+
+            /** 
+             * @param {HTMLElement} block
+             */
+            function getPageY(block) {
+                const rect = block.getBoundingClientRect();
+                const pageY = rect.top + window.pageYOffset;
+                return pageY;
+            }
+
+            if (Object.keys(block_color_map).length) {
+                const block_to = getPageY(block);
+                // const rect = block.getBoundingClientRect();
+                // console.log(block, rect.top, getPageY(block));
+                this.all_blocks_color_map.set(block, {
+                    color_data: block_color_map_with_word,
+                    parent_top: block_to
+                });
+            }
+            // console.log('block_color_map', block_color_map_with_word);
+            // console.log('this.all_blocks_color_map', this.all_blocks_color_map, this.word_color_map);
+            return block_color_map;
+        }
+
+        get_id() {
+            return Date.now().toString(36) + Math.floor(Math.random() * 1_000_000_000_000).toString(36);
+        }
+
+        /** @param {HTMLElement} block */
+        async paint_block(block) {
+            const this_id = this.get_id();
+            this.blocks_to_last_repaint_id.set(block, this_id);
+            // await wait(500); // we can add delay before show highlights
+
+            const matches = this.matches_by_blocks.get(block);
+            if (!matches) return;
+
+            const last_id = this.blocks_to_last_repaint_id.get(block);
+            if (this_id !== last_id) return;
+
+            const block_style = window.getComputedStyle(block);
+            if (
+                block_style.background === "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box" ||
+                block_style.background === "rgba(0, 0, 0, 0) paint(signspaces-paint) repeat scroll 0% 0% / auto padding-box border-box"
+            ) {
+            } else {
+                return;
+            }
+
+            const block_color_map = this.get_block_color_map(block, matches);
             if (Object.keys(block_color_map).length) {
                 block.style.setProperty("--words-color", JSON.stringify(block_color_map));
                 block.style.background = `paint(signspaces-paint)`;
@@ -648,6 +710,33 @@
             } else {
                 this.word_color_map.set(word, color);
             }
+        }
+
+        /**
+         *  @param {string} word
+         */
+        get_all_coordinates_for_word(word) {
+            const color_for_word = this.word_color_map.get(word);
+            // console.log('color_for_word', word, ": ", color_for_word);
+            const all_coordinates = [];
+            this.all_blocks_color_map.forEach((item) => {
+                const { color_data, parent_top } = item;
+                // console.log('item', color_data);
+                Object.entries(color_data).forEach(([color, coordinates]) => {
+                    if (color === color_for_word) {
+                        const this_word_coordinates = coordinates.filter(({ word: word_ }) => {
+                            return word === word_;
+                        });
+                        // console.log('color', color, coordinates, parent_top, this_word_coordinates);
+                        all_coordinates.push({
+                            coordinates: this_word_coordinates.flat(1),
+                            top: parent_top,
+                        });
+                    };
+                });
+            });
+            // console.log('all_coordinates', all_coordinates);
+            return all_coordinates;
         }
     };
 
@@ -700,9 +789,64 @@
             list_of_words.innerHTML += `
                 <li style="display: flex; justify-content: space-between">${word}
                     <input type="color" onchange="color_change_word('${word}')" value="#ffff00" name="${word}" />
+                    <button data-word="${word}" data-show="0">\\|</button>
                 </li>
             `;
         }
+        document.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", function (event) {
+                const word = event.target.dataset.word;
+                const show_old = event.target.dataset.show;
+                const show_new = +show_old + 1;
+                // console.log('show_old', show_old, ": ", show_new);
+                button.setAttribute('data-show', show_new);
+
+                const all_coordinates = highlighter.get_all_coordinates_for_word(word);
+                // console.log('all_coordinates', all_coordinates);
+                const prepared_to_navigate = all_coordinates.map(({ coordinates, top }) => {
+                    // console.log('coordinates, top', coordinates, top);
+                    const new_items = coordinates.map(({ coordinates_map }) => {
+                        // console.log('coordinates_map', coordinates_map);
+                        return coordinates_map.map(([x, y]) => {
+                            return ({
+                                y, top
+                            })
+                        })
+                    });
+
+                    // console.log('new_items', new_items);
+                    return new_items;
+                });
+
+                const flat_items = prepared_to_navigate.flat(2);
+
+                const filtered_flat_items = [];
+                const seen = new Set();
+
+                flat_items.forEach(item => {
+                    const identifier = `${item.y}-${item.top}`;
+                    if (!seen.has(identifier)) {
+                        filtered_flat_items.push(item);
+                        seen.add(identifier);
+                    }
+                });
+                let show_current_word_coordinates = filtered_flat_items[0];
+                if (filtered_flat_items.length > show_new) {
+                    show_current_word_coordinates = filtered_flat_items[show_new];
+                } else {
+                    button.setAttribute('data-show', "0");
+                }
+
+                // console.log('prepared_to_navigate', filtered_flat_items, show_current_word_coordinates);
+                // window.scrollTo(0,
+                //     show_current_word_coordinates.y + show_current_word_coordinates.top
+                // );
+                window.scrollTo({
+                    top: show_current_word_coordinates.y + show_current_word_coordinates.top,
+                    behavior: 'smooth'
+                });
+            });
+        })
         update_active_words_datalist();
         update_new_words_datalist();
     }
