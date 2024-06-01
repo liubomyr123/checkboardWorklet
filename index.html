@@ -5,6 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .highlightCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            /* Makes sure the canvas doesn't interfere with mouse events */
+        }
+    </style>
 </head>
 
 <body style="position: relative;">
@@ -372,7 +386,7 @@
         /** @type {Map<string, string>} */
         word_color_map = new Map();
 
-        /** @type {Map<HTMLElement, { color_data: ColorDataMapWithWord, parent_top: number }>} */
+        /** @type {Map<HTMLElement, { color_data: ColorDataMapWithWord, parent_top: number, parent_left: number, block: HTMLElement }>} */
         all_blocks_color_map = new Map();
 
         async init(all_words, exclude_words) {
@@ -742,13 +756,26 @@
                 return pageY;
             }
 
+            /** 
+             * @param {HTMLElement} block
+             */
+            function getPageX(block) {
+                const rect = block.getBoundingClientRect();
+                const pageX = rect.left + window.pageXOffset;
+                // console.log('window.pageXOffset', window.pageXOffset, rect.left);
+                return pageX;
+            }
+
             if (Object.keys(block_color_map).length) {
                 const block_to = getPageY(block);
+                const block_toX = getPageX(block);
                 // const rect = block.getBoundingClientRect();
                 // console.log(block, rect.top, getPageY(block));
                 this.all_blocks_color_map.set(block, {
                     color_data: block_color_map_with_word,
-                    parent_top: block_to
+                    parent_top: block_to,
+                    parent_left: block_toX,
+                    block
                 });
             }
             // console.log('block_color_map', block_color_map_with_word);
@@ -810,7 +837,7 @@
             // console.log('color_for_word', word, ": ", color_for_word);
             const all_coordinates = [];
             this.all_blocks_color_map.forEach((item) => {
-                const { color_data, parent_top } = item;
+                const { color_data, parent_top, parent_left, block } = item;
                 // console.log('item', color_data);
                 Object.entries(color_data).forEach(([color, coordinates]) => {
                     if (color === color_for_word) {
@@ -821,12 +848,72 @@
                         all_coordinates.push({
                             coordinates: this_word_coordinates.flat(1),
                             top: parent_top,
+                            left: parent_left,
+                            block,
                         });
                     };
                 });
             });
             // console.log('all_coordinates', all_coordinates);
             return all_coordinates;
+        }
+
+
+        /**
+         *  @param {ColorDataMapWithWord[x]['coordinates_map']} coordinates
+         *  @param {number} left
+         *  @param {number} top
+         */
+        update_word_color_by_coordinates(coordinates, left, top) {
+            // console.log('coordinates', coordinates, left);
+            let [item_x, item_y, item_width, item_height] = coordinates;
+
+            let canvas = document.querySelector(".highlightCanvas");
+            if (!canvas) {
+                canvas = document.createElement("canvas");
+                canvas.className = 'highlightCanvas';
+                canvas.width = document.documentElement.scrollWidth;
+                canvas.height = document.documentElement.scrollHeight;
+            }
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            this.roundRect(ctx, item_x + left, item_y + top - item_height, item_width, item_height);
+            document.body.appendChild(canvas)
+        }
+
+        /**
+         * Draws a rounded rectangle on the canvas context.
+         * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+         * @param {number} x - The x-coordinate of the rectangle's starting point.
+         * @param {number} y - The y-coordinate of the rectangle's starting point.
+         * @param {number} width - The width of the rectangle.
+         * @param {number} height - The height of the rectangle.
+         * @param {number} radius - The corner radius of the rectangle.
+         * @param {number} horizontal_padding - Horizontal padding.
+         * @param {number} vertical_padding - Vertical padding.
+         */
+        roundRect(ctx, x, y, width, height, radius = 10, horizontal_padding = 4, vertical_padding = 1) {
+            if (width < 2 * radius) {
+                radius = width / 2;
+            }
+            if (height < 2 * radius) {
+                radius = height / 2;
+            }
+
+            x -= horizontal_padding;
+            y -= vertical_padding;
+            width += 2 * horizontal_padding;
+            height += 2 * vertical_padding;
+
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.arcTo(x + width, y, x + width, y + height, radius);
+            ctx.arcTo(x + width, y + height, x, y + height, radius);
+            ctx.arcTo(x, y + height, x, y, radius);
+            ctx.arcTo(x, y, x + width, y, radius);
+            ctx.closePath();
+            ctx.fill();
         }
     };
 
@@ -890,13 +977,14 @@
         const get_filtered_flat_items = (word) => {
             const all_coordinates = highlighter.get_all_coordinates_for_word(word);
             // console.log('all_coordinates', all_coordinates);
-            const prepared_to_navigate = all_coordinates.map(({ coordinates, top }) => {
+            const prepared_to_navigate = all_coordinates.map(({ coordinates, top, left, block }) => {
                 // console.log('coordinates, top', coordinates, top);
                 const new_items = coordinates.map(({ coordinates_map }) => {
                     // console.log('coordinates_map', coordinates_map);
-                    return coordinates_map.map(([x, y]) => {
+                    return coordinates_map.map((coordinate_map) => {
+                        const [x, y] = coordinate_map;
                         return ({
-                            y, top
+                            y, top, coordinate_map, block, left
                         })
                     })
                 });
@@ -944,6 +1032,7 @@
                     button.setAttribute('data-show', "0");
                     show_current_word_coordinates = filtered_flat_items[filtered_flat_items.length - 1];
                 }
+                // console.log('show_current_word_coordinates', show_current_word_coordinates);
                 button.textContent = `(${current_show}/${filtered_flat_items.length})`;
 
                 // console.log('prepared_to_navigate', filtered_flat_items, show_current_word_coordinates);
@@ -951,6 +1040,11 @@
                     top: show_current_word_coordinates.y + show_current_word_coordinates.top,
                     behavior: 'smooth'
                 });
+                highlighter.update_word_color_by_coordinates(
+                    show_current_word_coordinates.coordinate_map,
+                    show_current_word_coordinates.left,
+                    show_current_word_coordinates.top,
+                );
             });
         })
         update_active_words_datalist();
@@ -1050,14 +1144,15 @@
                         // console.log('data_type', data_type);
                         switch (data_type) {
                             case 'word': {
-                                // console.log('word', {
-                                //     word: string,
-                                //     position: rect
-                                // });
+                                // console.log('word:', string);
                                 break;
                             }
                             case 'nothing': {
                                 // console.log('nothing');
+                                break;
+                            }
+                            case 'avoid': {
+                                // console.log('avoid container');
                                 break;
                             }
                             default:
