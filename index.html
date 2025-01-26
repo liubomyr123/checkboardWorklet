@@ -677,7 +677,7 @@
         un_paint_blocks() {
             for (const block of this.matches_by_blocks.keys()) {
                 const block_style = window.getComputedStyle(block);
-                if (block_style.background === "rgba(0, 0, 0, 0) paint(signspaces-paint) repeat scroll 0% 0% / auto padding-box border-box") {
+                if (block_style.background === "rgba(0, 0, 0, 0) paint(my_paint) repeat scroll 0% 0% / auto padding-box border-box") {
                     block.style.setProperty("--words-color", "");
                     block.style.setProperty("background", "");
                 }
@@ -802,7 +802,7 @@
             const block_style = window.getComputedStyle(block);
             if (
                 block_style.background === "rgba(0, 0, 0, 0) none repeat scroll 0% 0% / auto padding-box border-box" ||
-                block_style.background === "rgba(0, 0, 0, 0) paint(signspaces-paint) repeat scroll 0% 0% / auto padding-box border-box"
+                block_style.background === "rgba(0, 0, 0, 0) paint(my_paint) repeat scroll 0% 0% / auto padding-box border-box"
             ) {
             } else {
                 return;
@@ -811,7 +811,7 @@
             const block_color_map = this.get_block_color_map(block, matches);
             if (Object.keys(block_color_map).length) {
                 block.style.setProperty("--words-color", JSON.stringify(block_color_map));
-                block.style.background = `paint(signspaces-paint)`;
+                block.style.background = `paint(my_paint)`;
             }
         }
 
@@ -1135,7 +1135,7 @@
                 get_all_words_from_main_content();
                 update_list_of_words();
 
-                await CSS.paintWorklet.addModule("checkboardWorklet.js")
+                await CSS.paintWorklet.addModule("worklet.js")
                 console.log('paintWorklet:OK');
                 document.addEventListener(
                     "mousemove",

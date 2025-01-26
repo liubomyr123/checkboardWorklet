@@ -12,7 +12,7 @@
  */
 
 registerPaint(
-    "signspaces-paint",
+    "my_paint",
     class {
 
         /**
